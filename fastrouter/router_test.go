@@ -1,7 +1,6 @@
 package fastrouter
 
 import (
-	"fmt"
 	"testing"
 )
 
@@ -80,7 +79,6 @@ func TestRouter(t *testing.T) {
 	}
 	r.initNodeStarts()
 	s := r.levels[0].nodes[2].start
-	fmt.Printf("%v", r)
 	if s[1] != 0 {
 		t.Errorf("r[0][2][1] start should be %d,but got %d", 0, s[1])
 	}
@@ -110,5 +108,45 @@ func TestRouter(t *testing.T) {
 			}
 		}
 
+	}
+}
+
+func BenchmarkRouter_Router(b *testing.B) {
+	r := newRouter(1, 5)
+	for _, p := range []struct {
+		path    string
+		method  int
+		handler handle
+	}{
+		{"", 0, nil},
+		{"b/b", 0, nil},
+		{"b/c", 0, nil},
+		{"a/b", 0, nil},
+		{"/a/b/c", 0, nil},
+		{"/a/c", 0, nil},
+		{"/a/:c/e", 0, nil},
+		{"/a/:c/*f", 0, nil},
+		{"/a/:c/f*", 0, nil},
+	} {
+		r.bind(p.method, p.path, p.handler)
+	}
+	r.initNodeStarts()
+	for _, p := range []struct {
+		u string
+		r string
+	}{
+		{"b/b", "h1"},
+		{"/b/c", "h2"},
+		{"a/b", "h3"},
+		{"a/b/c", "h4"},
+		{"a/c", "h5"},
+		{"a/x/e", "h6"},
+		{"a/b/cf", "h7"},
+		{"a/v/f1", "h8"},
+	} {
+		h := r.Lookup("GET", p.u)
+		if h != nil {
+			_ = h()
+		}
 	}
 }
