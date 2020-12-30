@@ -8,15 +8,15 @@ import (
 // 1. 逆向查找
 // 2. 多线程查找
 
-var methods = map[string]int{
-	"GET":     0,
-	"POST":    1,
-	"PUT":     2,
-	"HEAD":    3,
-	"DELETE":  4,
-	"PATCH":   5,
-	"OPTIONS": 6,
-}
+const (
+	GET = iota
+	POST
+	PUT
+	HEAD
+	DELETE
+	PATCH
+	OPTIONS
+)
 
 type handle func() error
 
@@ -59,10 +59,10 @@ func (r *router) increase() {
 func (n *node) String() string {
 	return n.path
 }
-func (l *level) String() string {
+func (v *level) String() string {
 	s := "[ "
-	for i := 0; i < len(l.nodes); i++ {
-		s = s + l.nodes[i].String() + " "
+	for i := 0; i < len(v.nodes); i++ {
+		s = s + v.nodes[i].String() + " "
 	}
 	return s + "]"
 }
@@ -113,24 +113,88 @@ func (v *level) bind(p *node, path string) *node {
 	v.nodes[l] = n
 	return n
 }
+func getMethodCode(method string) int {
+	switch method {
+	case "", "GET":
+		return 0
+	case "POST":
+		return 1
+	case "PUT":
+		return 2
+	case "HEAD":
+		return 3
+	case "DELETE":
+		return 4
+	case "PATCH":
+		return 5
+	case "OPTIONS":
+		return 6
+	default:
+		return 0
+	}
+}
 
-func (r *router) bind(path string, method string, h handle) {
-	m, ok := methods[method]
+func (r *router) initNodeStarts() {
+	for _, l := range r.levels {
+		l.sort()
+	}
+
+}
+
+func (r *router) Lookup(method, path string) handle {
+	//m := getMethodCode(method)
+
+	return nil
+}
+
+func (r *router) Any(path string, h handle) {
+	for i := 0; i < 7; i++ {
+		r.bind(i, path, h)
+	}
+}
+
+func (r *router) Get(path string, h handle) {
+	r.bind(GET, path, h)
+}
+
+func (r *router) Post(path string, h handle) {
+	r.bind(POST, path, h)
+}
+
+func (r *router) Put(path string, h handle) {
+	r.bind(PUT, path, h)
+}
+
+func (r *router) Head(path string, h handle) {
+	r.bind(HEAD, path, h)
+}
+
+func (r *router) Delete(path string, h handle) {
+	r.bind(DELETE, path, h)
+}
+
+func (r *router) Patch(path string, h handle) {
+	r.bind(PATCH, path, h)
+}
+
+func (r *router) Options(path string, h handle) {
+	r.bind(OPTIONS, path, h)
+}
+
+func (r *router) bind(m int, path string, h handle) {
 	dp := 0
 	var pr *node
-	if ok {
-		lookup(path, func(start, end int) bool {
-			p := path[start:end]
-			if dp == r.deep {
-				r.increase()
-			}
-			pr = r.levels[dp].bind(pr, p)
-			dp++
-			return false
-		})
-		if pr != nil {
-			pr.handle[m] = h
+	lookup(path, func(start, end int) bool {
+		p := path[start:end]
+		if dp == r.deep {
+			r.increase()
 		}
+		pr = r.levels[dp].bind(pr, p)
+		dp++
+		return false
+	})
+	if pr != nil {
+		pr.handle[m] = h
 	}
 }
 

@@ -51,20 +51,20 @@ func TestRouter(t *testing.T) {
 	r := newRouter(1, 5)
 	for i, p := range []struct {
 		path    string
-		method  string
+		method  int
 		handler handle
 	}{
-		{"", "GET", nil},
-		{"a/b", "GET", nil},
-		{"a/b/", "GET", nil},
-		{"/a/b/c", "GET", nil},
-		{"/a/c", "GET", nil},
+		{"", 0, nil},
+		{"a/b", 0, nil},
+		{"a/b/", 0, nil},
+		{"/a/b/c", 0, nil},
+		{"/a/c", 0, nil},
 	} {
 		d := deep(p.path)
 		if d > dp {
 			dp = d
 		}
-		r.bind(p.path, p.method, nil)
+		r.bind(p.method, p.path, nil)
 		if r.deep != dp {
 			t.Errorf("%v", r)
 			t.Errorf("%d. router deep error at  %s, should be %d but got %d", i, p.path, d, r.deep)
