@@ -1,4 +1,4 @@
-package fastrouter
+package anysrv
 
 import (
 	"testing"
