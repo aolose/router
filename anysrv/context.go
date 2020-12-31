@@ -10,6 +10,7 @@ type Context interface {
 	String(str string)
 	Params() map[string]string
 	Param(name string) string
+	Resp() http.ResponseWriter
 }
 
 type context struct {
@@ -21,6 +22,9 @@ type context struct {
 
 func (c *context) Path() string {
 	return c.req.URL.Path
+}
+func (c *context) Resp() http.ResponseWriter {
+	return c.resp
 }
 func (c *context) Param(name string) string {
 	p := c.node

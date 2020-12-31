@@ -35,9 +35,11 @@ func (app *App) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		app.ctx.Error(http.StatusNotFound, errors.New("page not found"))
 	}
 }
-
-func (app *App) Run(addr string, port int) {
+func (app *App) Ready() {
 	app.router.initNodeStarts()
+}
+func (app *App) Run(addr string, port int) {
+	app.Ready()
 	fmt.Printf("Server running on: %s:%d", addr, port)
 	http.ListenAndServe(addr+":"+strconv.Itoa(port), app)
 }
