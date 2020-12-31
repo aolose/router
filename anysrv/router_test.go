@@ -55,17 +55,17 @@ func TestRouter(t *testing.T) {
 	for i, p := range []struct {
 		path    string
 		method  int
-		handler handle
+		handler Handler
 	}{
-		{"", 0, func() error { a = "h0"; return nil }},
-		{"b/b", 0, func() error { a = "h1"; return nil }},
-		{"b/c", 0, func() error { a = "h2"; return nil }},
-		{"a/b", 0, func() error { a = "h3"; return nil }},
-		{"/a/b/c", 0, func() error { a = "h4"; return nil }},
-		{"/a/c", 0, func() error { a = "h5"; return nil }},
-		{"/a/:c/e", 0, func() error { a = "h6"; return nil }},
-		{"/a/:c/*f", 0, func() error { a = "h7"; return nil }},
-		{"/a/:c/f*", 0, func() error { a = "h8"; return nil }},
+		{"", 0, func(c Context) { a = "h0" }},
+		{"b/b", 0, func(c Context) { a = "h1" }},
+		{"b/c", 0, func(c Context) { a = "h2" }},
+		{"a/b", 0, func(c Context) { a = "h3" }},
+		{"/a/b/c", 0, func(c Context) { a = "h4" }},
+		{"/a/c", 0, func(c Context) { a = "h5" }},
+		{"/a/:c/e", 0, func(c Context) { a = "h6" }},
+		{"/a/:c/*f", 0, func(c Context) { a = "h7" }},
+		{"/a/:c/f*", 0, func(c Context) { a = "h8" }},
 	} {
 		d := deep(p.path)
 		if d > dp {
@@ -88,23 +88,32 @@ func TestRouter(t *testing.T) {
 	for _, p := range []struct {
 		u string
 		r string
+		m bool
 	}{
-		{"b/b", "h1"},
-		{"/b/c", "h2"},
-		{"a/b", "h3"},
-		{"a/b/c", "h4"},
-		{"a/c", "h5"},
-		{"a/x/e", "h6"},
-		{"a/b/cf", "h7"},
-		{"a/v/f1", "h8"},
+		{"", "h0", false},
+		{"b/b", "h1", false},
+		{"/b/c", "h2", false},
+		{"a/b", "h3", false},
+		{"a/b/c", "h4", false},
+		{"a/c", "h5", false},
+		{"a/x/e", "h6", false},
+		{"a/b/cf", "h7", false},
+		{"a/v/f1", "h8", false},
+		{"a/v/f3/ddd", "h8", true},
 	} {
-		h := r.Lookup("GET", p.u)
+		h, _ := r.Lookup("GET", p.u)
 		if h == nil {
-			t.Errorf("lookup %s should return a handle", p.u)
+			if !p.m {
+				t.Errorf("lookup %s should return a Handler", p.u)
+			}
 		} else {
-			_ = h()
-			if a != p.r {
-				t.Errorf("lookup %s should change a to %s ,but got %s", p.u, p.r, a)
+			if p.m {
+				t.Errorf("lookup %s should not return  Handler", p.u)
+			} else {
+				h(nil)
+				if a != p.r {
+					t.Errorf("lookup %s should change a to %s ,but got %s", p.u, p.r, a)
+				}
 			}
 		}
 
@@ -116,7 +125,7 @@ func BenchmarkRouter_Router(b *testing.B) {
 	for _, p := range []struct {
 		path    string
 		method  int
-		handler handle
+		handler Handler
 	}{
 		{"", 0, nil},
 		{"b/b", 0, nil},
@@ -144,9 +153,9 @@ func BenchmarkRouter_Router(b *testing.B) {
 		{"a/b/cf", "h7"},
 		{"a/v/f1", "h8"},
 	} {
-		h := r.Lookup("GET", p.u)
+		h, _ := r.Lookup("GET", p.u)
 		if h != nil {
-			_ = h()
+			h(nil)
 		}
 	}
 }
