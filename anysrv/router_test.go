@@ -1,6 +1,7 @@
 package anysrv
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -77,7 +78,8 @@ func TestRouter(t *testing.T) {
 			t.Errorf("%d. router deep error at  %s, should be %d but got %d", i, p.path, d, r.deep)
 		}
 	}
-	r.initNodeStarts()
+	r.ready()
+	fmt.Printf("%v", r)
 	s := r.levels[0].nodes[2].start
 	if s[1] != 0 {
 		t.Errorf("r[0][2][1] start should be %d,but got %d", 0, s[1])
@@ -139,7 +141,7 @@ func BenchmarkRouter_Router(b *testing.B) {
 	} {
 		r.bind(p.method, p.path, p.handler)
 	}
-	r.initNodeStarts()
+	r.ready()
 	for _, p := range []struct {
 		u string
 		r string

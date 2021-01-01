@@ -22,11 +22,11 @@ func (r *router) increase() {
 }
 
 func (r *router) String() string {
-	s := "{\n "
+	s := "{"
 	for i := 0; i < len(r.levels); i++ {
 		s = s + r.levels[i].String() + " "
 	}
-	return s + "}\n"
+	return s + "\n}\n"
 }
 
 func newRouter(deep, beginCap int) *router {
@@ -39,17 +39,20 @@ func newRouter(deep, beginCap int) *router {
 	return r
 }
 
-func (r *router) initNodeStarts() {
+func (r *router) ready() {
 	r.cache = make([]string, r.deep, r.deep)
-	for i, l := range r.levels {
+	w := len(r.levels)
+	for i := 0; i < w; i++ {
 		if i > 0 {
-			l.sort()
+			r.levels[i].sort()
 		}
 		c := r.deep - i - 1
-		for _, n := range l.nodes {
+		ns := r.levels[i].nodes
+		l := len(ns)
+		for j := 0; j < l; j++ {
 			if c > 0 {
 				s := make([]int, c, c)
-				n.start = s
+				ns[j].start = s
 				for t := 0; t < c; t++ {
 					s[t] = -1
 				}
@@ -59,13 +62,15 @@ func (r *router) initNodeStarts() {
 	for i := r.deep - 1; i > 0; i-- {
 		lv := r.levels[i]
 		var p *node
-		for x, n := range lv.nodes {
-			if n.parent != p {
-				p = n.parent
-				if len(n.start) > 0 {
-					copy(p.start[1:], n.start)
+		ns := lv.nodes
+		l := len(ns)
+		for j := 0; j < l; j++ {
+			if ns[j].parent != p {
+				p = ns[j].parent
+				if len(ns[j].start) > 0 {
+					copy(p.start[1:], ns[j].start)
 				}
-				p.start[0] = x
+				p.start[0] = j
 			}
 		}
 	}

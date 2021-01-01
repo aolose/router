@@ -18,11 +18,11 @@ func (v *level) sort() {
 }
 
 func (v *level) String() string {
-	s := "[ "
+	s := "\n ["
 	for i := 0; i < len(v.nodes); i++ {
 		s = s + v.nodes[i].String() + " "
 	}
-	return s + "]\n"
+	return s + "\n ]"
 }
 
 func newLevel(cap int) *level {

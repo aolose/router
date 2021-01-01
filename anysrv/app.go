@@ -35,12 +35,16 @@ func (app *App) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		app.ctx.Error(http.StatusNotFound, errors.New("page not found"))
 	}
 }
+func (app *App) Add(method, path string, h Handler) {
+	app.router.bind(getMethodCode(method), path, h)
+}
+
 func (app *App) Ready() {
-	app.router.initNodeStarts()
+	app.router.ready()
 }
 func (app *App) Run(addr string, port int) {
 	app.Ready()
-	fmt.Printf("Server running on: %s:%d", addr, port)
+	fmt.Printf("Server running on: http://%s:%d", addr, port)
 	http.ListenAndServe(addr+":"+strconv.Itoa(port), app)
 }
 

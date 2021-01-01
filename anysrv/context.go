@@ -38,10 +38,11 @@ func (c *context) Param(name string) string {
 		for pt[s] != '/' {
 			s--
 		}
-		if p.path[1] == ':' && p.path[1:] == name {
+		if p.path[0] == ':' && p.path[1:] == name {
 			return pt[s+1 : e]
 		}
 		e = s
+		s--
 		p = p.parent
 	}
 	return ""
@@ -60,7 +61,7 @@ func (c *context) Params() map[string]string {
 		for pt[s] != '/' {
 			s--
 		}
-		if p.path[1] == ':' {
+		if p.path[0] == ':' {
 			m[p.path[1:]] = pt[s+1 : e]
 		}
 		e = s
