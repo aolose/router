@@ -50,7 +50,7 @@ func (v *level) bind(p *node, path string) *node {
 		v.nodes = ns
 	}
 	v.nodes = v.nodes[:l+1]
-	n := &node{path: path, parent: p}
+	n := &node{path: path, parent: p, start: -1}
 	v.nodes[l] = n
 	return n
 }

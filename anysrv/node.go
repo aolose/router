@@ -5,8 +5,8 @@ import "fmt"
 type node struct {
 	path   string
 	parent *node
-	handle [7]Handler
-	start  []int
+	handle Handler
+	start  int
 }
 
 func (n *node) match(ps []string) (bool, int) {
@@ -14,23 +14,14 @@ func (n *node) match(ps []string) (bool, int) {
 	l := len(ps)
 	d := -1
 	var p0, p1 string
-	var n0, n1 int
-	for i := l - 1; i > -1 && p != nil; i-- {
+	for i := l - 1; i > -1; i-- {
 		p0 = p.path
 		p1 = ps[i]
-		n0 = len(p0)
-		n1 = len(p1)
-		if p0 == p1 || len(p0) > 0 && (p0[0] == ':' || p0 == "*" ||
-			(n1 >= n0 &&
-				(p0[0] == '*' && (p0[1:] == p1[n1-n0+1:]) ||
-					(p0[n0-1] == '*' && p0[:n0-1] == p1[:n0-1])))) {
+		if match(p0, p1) {
 			p = p.parent
 			d++
 		} else {
-			if d == -1 || len(p.start) == 0 {
-				return false, -1
-			}
-			return false, p.start[d]
+			return false, p.start
 		}
 	}
 	return true, -1

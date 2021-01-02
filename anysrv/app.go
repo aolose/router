@@ -15,7 +15,7 @@ type App struct {
 
 func New() *App {
 	return &App{
-		router:     newRouter(8, 8),
+		router:     newRouter(),
 		middleware: make([]Middleware, 0, 32),
 		ctx:        &context{},
 	}
