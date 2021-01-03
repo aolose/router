@@ -1,11 +1,23 @@
 package main
 
-import "anysrv"
+import (
+	"fmt"
+	"sort"
+)
 
 func main() {
-	app := anysrv.New()
-	app.Get("/", func(c anysrv.Context) {
-		c.String("hello world")
+	a := []string{
+		"cba",
+		"abc",
+		"acb",
+		"bca",
+	}
+	sort.Slice(a, func(i, j int) bool {
+		return sort.StringsAreSorted([]string{
+			a[i], a[j],
+		})
 	})
-	app.Run("127.0.0.1", 8088)
+	print(3 / 2)
+
+	fmt.Printf("%v", a)
 }

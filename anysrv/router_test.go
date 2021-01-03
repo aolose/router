@@ -19,7 +19,7 @@ func TestDeep(t *testing.T) {
 		{"/a/b", 2},
 		{"/a/b/", 2},
 	} {
-		if v := deep(p.path); v != p.deep {
+		if v, _ := deep(p.path); v != p.deep {
 			t.Errorf("deep(%s) should equal %d, but got %d", p.path, p.deep, v)
 		}
 	}
@@ -68,7 +68,7 @@ func TestRouter(t *testing.T) {
 		{"/a/:c/*f", 0, func(c Context) { a = "h7" }},
 		{"/a/:c/f*", 0, func(c Context) { a = "h8" }},
 	} {
-		d := deep(p.path)
+		d, _ := deep(p.path)
 		if d > dp {
 			dp = d
 		}

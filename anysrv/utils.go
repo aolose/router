@@ -1,17 +1,27 @@
 package anysrv
 
-func deep(path string) int {
+func deep(path string) (int, bool) {
+	isStatic := true
 	d := 1
 	l := len(path)
 	if l > 0 {
 		l = l - 1
 		for i := 1; i < l; i++ {
-			if path[i] == '/' {
+			p := path[i]
+			if p == '/' {
 				d++
+			}
+			if isStatic {
+				if p == ':' || p == '*' {
+					isStatic = false
+				}
 			}
 		}
 	}
-	return d
+	if isStatic {
+		return d, path[l] != '*'
+	}
+	return d, isStatic
 }
 
 func match(n *node, real string) bool {
