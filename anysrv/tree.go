@@ -31,12 +31,27 @@ func (r *tree) ready() {
 			r.levels[i].sort()
 		}
 	}
-	ns := r.levels[r.deep-1].nodes
-	l := len(ns)
-	for i := 0; i < l; i++ {
-		for p := ns[i].parent; p != nil; p = p.parent {
-			if p.start == -1 {
-				p.start = i
+	for d := 0; d < r.deep; d++ {
+		ns := r.levels[d].nodes
+		l := len(ns)
+		var before *node
+		for i := 0; i < l; i++ {
+			n := ns[i]
+			n.deep = d
+			if n.parent != nil && n.parent.next == nil {
+				n.parent.next = n
+			}
+			if n != before {
+				if before != nil {
+					if before.parent == n.parent {
+						before.right = n
+					} else {
+						if before.parent != nil {
+							before.right = before.parent.right
+						}
+					}
+				}
+				before = n
 			}
 		}
 	}

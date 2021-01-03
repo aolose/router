@@ -50,7 +50,7 @@ func (v *level) bind(p *node, path string, end bool) *node {
 		v.nodes = ns
 	}
 	v.nodes = v.nodes[:l+1]
-	n := &node{path: path, parent: p, start: -1, cate: 2}
+	n := &node{path: path, parent: p, cate: 2}
 	pn := len(path)
 	if pn != 0 {
 		if path == "*" {

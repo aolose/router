@@ -1,32 +1,29 @@
 package anysrv
 
-import "fmt"
-
 type node struct {
 	path   string
+	deep   int
 	parent *node
+	right  *node
+	next   *node
 	handle Handler
-	start  int
 	cate   int
 }
 
-func (n *node) match(ps []string) (bool, int) {
-	p := n
-	l := len(ps)
-	d := -1
-	var p1 string
-	for i := l - 1; i > -1; i-- {
-		p1 = ps[i]
-		if match(p, p1) {
-			p = p.parent
-			d++
+func (n *node) match(ps []string) *node {
+	for n != nil {
+		if match(n, ps[n.deep]) {
+			if n.next == nil {
+				return n
+			}
+			n = n.next
 		} else {
-			return false, p.start
+			n = n.right
 		}
 	}
-	return true, -1
+	return nil
 }
 
 func (n *node) String() string {
-	return fmt.Sprintf("(%s) - %v, ", n.path, n.start)
+	return n.path
 }

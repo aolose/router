@@ -5,27 +5,35 @@ type router [7]*deepTree
 func (r *router) Lookup(method, path string) (Handler, *node) {
 	dt := r[getMethodCode(method)]
 	d := 0
-	lookup(path, func(start, end int) bool {
-		dt.cache[d] = path[start:end]
-		if d > dt.max {
-			dt.cache[d] = string(0) + dt.cache[d]
-			return true
+	if path == "/" {
+		d = 1
+		dt.cache[0] = ""
+	} else {
+		path = path[1:]
+		l := len(path)
+		s := 0
+		e := path[l-1] != '/'
+		ss := 0
+		for ; s < l; s++ {
+			if path[ss] == '/' {
+				dt.cache[d] = path[:ss]
+				d++
+				path = path[ss+1:]
+				ss = 0
+			} else {
+				ss++
+			}
 		}
-		d++
-		return false
-	})
+		if e {
+			dt.cache[d] = path
+			d++
+		}
+	}
 	tre := dt.trees[d-1]
 	if tre != nil {
-		ns := tre.levels[d-1].nodes
-		for e := len(ns) - 1; e > -1; e-- {
-			n := ns[e]
-			o, i := n.match(dt.cache[:d])
-			if o {
-				return n.handle, n
-			}
-			if i != -1 {
-				e = i
-			}
+		n := tre.levels[0].nodes[0].match(dt.cache)
+		if n != nil {
+			return n.handle, n
 		}
 	}
 	return nil, nil
@@ -76,12 +84,12 @@ func (r *router) ready() {
 
 func newRouter() *router {
 	return &router{
-		&deepTree{trees: make([]*tree, 0, 32)},
-		&deepTree{trees: make([]*tree, 0, 32)},
-		&deepTree{trees: make([]*tree, 0, 32)},
-		&deepTree{trees: make([]*tree, 0, 32)},
-		&deepTree{trees: make([]*tree, 0, 32)},
-		&deepTree{trees: make([]*tree, 0, 32)},
-		&deepTree{trees: make([]*tree, 0, 32)},
+		&deepTree{trees: make([]*tree, 0, 0)},
+		&deepTree{trees: make([]*tree, 0, 0)},
+		&deepTree{trees: make([]*tree, 0, 0)},
+		&deepTree{trees: make([]*tree, 0, 0)},
+		&deepTree{trees: make([]*tree, 0, 0)},
+		&deepTree{trees: make([]*tree, 0, 0)},
+		&deepTree{trees: make([]*tree, 0, 0)},
 	}
 }
