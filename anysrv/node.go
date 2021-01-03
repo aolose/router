@@ -7,17 +7,17 @@ type node struct {
 	parent *node
 	handle Handler
 	start  int
+	cate   int
 }
 
 func (n *node) match(ps []string) (bool, int) {
 	p := n
 	l := len(ps)
 	d := -1
-	var p0, p1 string
+	var p1 string
 	for i := l - 1; i > -1; i-- {
-		p0 = p.path
 		p1 = ps[i]
-		if match(p0, p1) {
+		if match(p, p1) {
 			p = p.parent
 			d++
 		} else {

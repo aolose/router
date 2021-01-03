@@ -8,7 +8,7 @@ func (r *router) Lookup(method, path string) (Handler, *node) {
 	lookup(path, func(start, end int) bool {
 		dt.cache[d] = path[start:end]
 		if d > dt.max {
-			dt.cache[d] += "?"
+			dt.cache[d] = string(0) + dt.cache[d]
 			return true
 		}
 		d++
@@ -53,7 +53,7 @@ func (r *router) bind(m int, path string, h Handler) {
 	}
 	lookup(path, func(start, end int) bool {
 		p := path[start:end]
-		pr = dt.levels[dp].bind(pr, p)
+		pr = dt.levels[dp].bind(pr, p, dp == u && path[len(path)-1] != '/')
 		dp++
 		return false
 	})

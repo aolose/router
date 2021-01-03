@@ -14,30 +14,47 @@ func deep(path string) int {
 	return d
 }
 
-func match(route, real string) bool {
-	if route == real {
+func match(n *node, real string) bool {
+	switch n.cate {
+	//:*
+	case 0, 1:
 		return true
-	}
-	n0 := len(route)
-	if n0 == 0 {
-		return false
-	}
-	if route[0] == ':' {
-		return true
-	}
-	if route == "*" {
-		return true
-	}
-	n1 := len(real)
-	if n1 == 0 {
-		return false
-	}
-	if n1 >= n0-1 {
-		if route[0] == '*' && (route[1:] == real[n1-n0+1:]) || (route[n0-1] == '*' && route[:n0-1] == real[:n0-1]) {
-			return true
+		return real == "" || real[0] != 0
+	//aa aa
+	case 2:
+		return n.path == real
+	//abc*
+	case 3:
+		l := len(n.path) - 1
+		if l > len(real) {
+			return false
 		}
+		p := n.path
+		for i := 0; i < l-1; i++ {
+			if p[i] != real[i] {
+				return false
+			}
+		}
+		return true
+	//*abc
+	case 4:
+		p := n.path
+		l := len(p) - 1
+		if l > len(real) {
+			return false
+		}
+		r := len(real)
+		for i := 1; i < l; i++ {
+			if p[i] != real[r-l+i] {
+				return false
+			}
+		}
+		return true
+	case 5:
+		return true
+	default:
+		return false
 	}
-	return false
 }
 
 func lookup(path string, h func(start, end int) bool) bool {
