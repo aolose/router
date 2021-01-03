@@ -31,7 +31,7 @@ func newLevel(cap int) *level {
 	}
 }
 
-func (v *level) bind(p *node, path string, end bool) *node {
+func (v *level) bind(p *node, path string) *node {
 	l := len(v.nodes)
 	for i := 0; i < l; i++ {
 		n := v.nodes[i]
@@ -54,9 +54,6 @@ func (v *level) bind(p *node, path string, end bool) *node {
 	pn := len(path)
 	if pn != 0 {
 		if path == "*" {
-			if end {
-				n.cate = 5
-			}
 			n.cate = 1
 		} else if path[0] == ':' {
 			n.cate = 0

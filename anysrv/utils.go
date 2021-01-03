@@ -19,7 +19,6 @@ func match(n *node, real string) bool {
 	//:*
 	case 0, 1:
 		return true
-		return real == "" || real[0] != 0
 	//aa aa
 	case 2:
 		return n.path == real
@@ -49,8 +48,6 @@ func match(n *node, real string) bool {
 				return false
 			}
 		}
-		return true
-	case 5:
 		return true
 	default:
 		return false

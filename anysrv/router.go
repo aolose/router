@@ -29,6 +29,9 @@ func (r *router) Lookup(method, path string) (Handler, *node) {
 			d++
 		}
 	}
+	if d > dt.max {
+		return nil, nil
+	}
 	tre := dt.trees[d-1]
 	if tre != nil {
 		n := tre.levels[0].nodes[0].match(dt.cache)
@@ -61,7 +64,7 @@ func (r *router) bind(m int, path string, h Handler) {
 	}
 	lookup(path, func(start, end int) bool {
 		p := path[start:end]
-		pr = dt.levels[dp].bind(pr, p, dp == u && path[len(path)-1] != '/')
+		pr = dt.levels[dp].bind(pr, p)
 		dp++
 		return false
 	})
