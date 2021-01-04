@@ -28,9 +28,13 @@ func (r *router) Lookup(method, path string) (Handler, *node) {
 		}
 	}
 	ss := 0
+	mx := dt.max - 2
 	for s := 0; s < l; s++ {
 		if path[ss] == '/' {
 			dt.cache[d] = path[:ss]
+			if d > mx {
+				return nil, nil
+			}
 			d++
 			path = path[ss+1:]
 			ss = 0
@@ -39,11 +43,7 @@ func (r *router) Lookup(method, path string) (Handler, *node) {
 		}
 	}
 	dt.cache[d] = path
-	d++
-	if d > dt.max {
-		return nil, nil
-	}
-	tre := dt.trees[d-1]
+	tre := dt.trees[d]
 	if tre != nil {
 		n := tre.levels[0].nodes[0].match(dt.cache)
 		if n != nil {
@@ -55,16 +55,17 @@ func (r *router) Lookup(method, path string) (Handler, *node) {
 
 func (r *router) bind(m int, path string, h Handler) {
 	dp := 0
+	l := len(path)
+	if l > 1 && path[l-1] == '/' {
+		l--
+		path = path[:l]
+	}
+	if l > 0 && path[0] == '/' {
+		path = path[1:]
+		l--
+	}
 	n, isStatic := deep(path)
 	if isStatic {
-		if path[0] == '/' {
-			path = path[1:]
-		}
-		l := len(path)
-		if l > 0 && path[l-1] == '/' {
-			l--
-			path = path[:l]
-		}
 		sl := r[m].static
 		nl := len(sl)
 		for i := 0; i < nl; i++ {
@@ -104,16 +105,15 @@ func (r *router) bind(m int, path string, h Handler) {
 		dt = newTree(n, 4)
 		r[m].trees[u] = dt
 	}
-
-	lookup(path, func(start, end int) bool {
-		p := path[start:end]
-		pr = dt.levels[dp].bind(pr, p)
-		dp++
-		return false
-	})
-	if pr != nil {
-		pr.handle = h
+	ss := 0
+	for s := 0; s < l; s++ {
+		if s == l-1 || path[s+1] == '/' {
+			pr = dt.levels[dp].bind(pr, path[ss:s+1])
+			ss = s + 2
+			dp++
+		}
 	}
+	pr.handle = h
 }
 
 func (r *router) ready() {

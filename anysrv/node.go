@@ -1,5 +1,10 @@
 package anysrv
 
+type paramdata struct {
+	name string
+	deep int
+}
+
 type node struct {
 	path   string
 	deep   int
@@ -8,6 +13,7 @@ type node struct {
 	next   *node
 	handle Handler
 	cate   int
+	params *[]*paramdata
 }
 
 func (n *node) match(ps []string) *node {

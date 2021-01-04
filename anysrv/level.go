@@ -58,9 +58,9 @@ func (v *level) bind(p *node, path string) *node {
 		} else if path[0] == ':' {
 			n.cate = 0
 		} else if path[0] == '*' {
-			n.cate = 3
-		} else if path[pn-1] == '*' {
 			n.cate = 4
+		} else if path[pn-1] == '*' {
+			n.cate = 3
 		}
 	}
 	v.nodes[l] = n
