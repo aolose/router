@@ -14,10 +14,10 @@ type Context interface {
 }
 
 type context struct {
-	node *node
-	req  *http.Request
-	resp http.ResponseWriter
-	code int
+	params []*param
+	req    *http.Request
+	resp   http.ResponseWriter
+	code   int
 }
 
 func (c *context) Path() string {
@@ -27,45 +27,24 @@ func (c *context) Resp() http.ResponseWriter {
 	return c.resp
 }
 func (c *context) Param(name string) string {
-	p := c.node
-	pt := c.Path()
-	e := len(pt)
-	if pt[e-1] == '/' {
-		e--
-	}
-	s := e - 1
-	for p.parent != nil {
-		for pt[s] != '/' {
-			s--
+	if c.params != nil {
+		for _, n := range c.params {
+			p := c.Path()
+			rq := parseReqPath(p)
+			if n.name == name {
+				return p[rq.start[n.deep]:rq.end[n.deep]]
+			}
 		}
-		if p.path[0] == ':' && p.path[1:] == name {
-			return pt[s+1 : e]
-		}
-		e = s
-		s--
-		p = p.parent
 	}
 	return ""
 }
 
 func (c *context) Params() map[string]string {
 	m := make(map[string]string)
-	p := c.node
-	pt := c.Path()
-	e := len(pt)
-	if pt[e-1] == '/' {
-		e--
-	}
-	s := e - 1
-	for p.parent != nil {
-		for pt[s] != '/' {
-			s--
-		}
-		if p.path[0] == ':' {
-			m[p.path[1:]] = pt[s+1 : e]
-		}
-		e = s
-		p = p.parent
+	p := c.Path()
+	rq := parseReqPath(p)
+	for _, n := range c.params {
+		m[n.name] = p[rq.start[n.deep]:rq.end[n.deep]]
 	}
 	return m
 }

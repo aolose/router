@@ -1,35 +1,31 @@
 package anysrv
 
-type paramdata struct {
-	name string
-	deep int
-}
-
 type node struct {
-	path   string
-	deep   int
-	parent *node
-	right  *node
-	next   *node
-	handle Handler
-	cate   int
-	params *[]*paramdata
+	handler Handler
+	next    *node
+	right   *node
+	deep    int
+	path    string
+	params  []*param
 }
 
-func (n *node) match(ps []string) *node {
-	for n != nil {
-		if match(n, ps[n.deep]) {
-			if n.next == nil {
-				return n
+func (n *node) lookup(path *string, rq *reqPath) (Handler, []*param) {
+	s := rq.start[n.deep]
+	e := rq.end[n.deep]
+	if n.path == (*path)[s:e] {
+		if n.next != nil {
+			h, d := n.next.lookup(path, rq)
+			if h != nil {
+				return h, d
 			}
-			n = n.next
-		} else {
-			n = n.right
+		}
+		if n.handler != nil {
+			return n.handler, n.params
 		}
 	}
-	return nil
-}
 
-func (n *node) String() string {
-	return n.path
+	if n.right != nil {
+		return n.right.lookup(path, rq)
+	}
+	return nil, nil
 }

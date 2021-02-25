@@ -1,136 +1,130 @@
 package anysrv
 
+import "sort"
+
 type tree struct {
-	deep   int
-	levels []*level
+	static [][]*staticNode
+	raw    []*rawNode
+	node   *node
+	nodes  []*node
 }
 
-func (r *tree) String() string {
-	s := "{"
-	for i := 0; i < len(r.levels); i++ {
-		s = s + r.levels[i].String() + " "
-	}
-	return s + "\n}\n"
-}
-
-func newTree(deep, beginCap int) *tree {
-	r := &tree{
-		deep:   deep,
-		levels: make([]*level, deep, deep),
-	}
-	for i := 0; i < deep; i++ {
-		r.levels[i] = newLevel(beginCap)
-	}
-	return r
-}
-
-func (r *tree) ready() {
-	w := len(r.levels)
-	for i := 0; i < w; i++ {
-		if i > 0 {
-			r.levels[i].sort()
+func (t *tree) addNode(path string, h Handler, start, end, pm []int) {
+	ps := make([]*param, len(pm))
+	for i, d := range pm {
+		ps[i] = &param{
+			name: path[start[d]:end[d]],
+			deep: d,
 		}
 	}
-	for d := 0; d < r.deep; d++ {
-		ns := r.levels[d].nodes
-		l := len(ns)
-		var before *node
-		for i := 0; i < l; i++ {
-			n := ns[i]
-			n.deep = d
-			if n.parent != nil && n.parent.next == nil {
-				n.parent.next = n
-			}
-			if n != before {
-				if before != nil {
-					if before.parent == n.parent {
-						before.right = n
+	var r *rawNode
+
+	l := len(start)
+	for i := 0; i < l; i++ {
+		s := start[i]
+		e := end[i]
+		p := path[s:e]
+		r = addRawNode(r, &t.raw, p)
+	}
+	if r != nil {
+		r.handler = h
+		r.params = ps
+	}
+}
+func (t *tree) addStatic(path string, h Handler) {
+	l := len(path)
+	st := t.static
+	if len(st) <= l {
+		ss := make([][]*staticNode, l+1, l+1)
+		copy(ss, st)
+		ss[l] = make([]*staticNode, 0, 0)
+		t.static = ss
+	}
+	s := t.static[l]
+	for _, p := range s {
+		if p.path == path {
+			return
+		}
+	}
+	n := len(s) + 1
+	ss := make([]*staticNode, n, n)
+	n--
+	copy(ss, s)
+	ss[n] = &staticNode{
+		path:    path,
+		handler: h,
+	}
+	t.static[l] = ss
+}
+func (t *tree) ready() {
+	sortRawNode(t.raw)
+	for _, r := range t.raw {
+		r.ready()
+	}
+	for _, a := range t.static {
+		if a != nil {
+			sort.Slice(a, func(i, j int) bool {
+				return sort.StringsAreSorted([]string{
+					a[i].path,
+					a[j].path,
+				})
+			})
+		}
+	}
+
+	nd := &node{}
+	if len(t.raw) > 0 {
+		t.raw[0].toNode(nd, nd)
+	}
+	t.node = nd
+	t.raw = nil
+}
+
+func (t *tree) lookup(path *string, rq *reqPath) (Handler, []*param) {
+	n := rq.length
+	if len(t.static) > n {
+		st := t.static[n]
+		if st != nil {
+			l := len(st)
+			e := l
+			s := -1
+			pt := (*path)[1:]
+			for m := l / 2; s < e && m > s && m < e; {
+				p := st[m]
+				i := 0
+				for ; i < n; i++ {
+					c0 := p.path[i]
+					c1 := pt[i]
+					if c0 == c1 {
+						continue
+					}
+					if c0 > c1 {
+						e = m
+						m = (e + s + 1) / 2
+						break
 					} else {
-						if before.parent != nil {
-							before.right = before.parent.right
-						}
+						s = m
+						m = (e + s + 1) / 2
+						break
 					}
 				}
-				before = n
+				if i == n {
+					return p.handler, nil
+				}
 			}
 		}
 	}
-}
-
-type staticHandler struct {
-	path    string
-	handler Handler
-}
-
-type staticData struct {
-	length     int
-	paths      []*staticHandler
-	startIndex int
-}
-
-func (sd *staticData) add(path string, handler Handler) {
-	ps := sd.paths
-	l := len(ps)
-	if l == cap(ps) {
-		v := make([]*staticHandler, l+1, l+1)
-		copy(v, ps)
-		ps = v
-	}
-	sd.paths = ps[:l+1]
-	sd.paths[l] = &staticHandler{path: path, handler: handler}
-}
-
-func (sd *staticData) macth(path string) Handler {
-	i := sd.startIndex
-	e := len(sd.paths)
-	s := -1
-	m := sd.length
-	for s < i && i < e {
-		c := sd.paths[i]
-		p := c.path
-		n := 0
-		for ; n < m; n++ {
-			if p[n] < path[n] {
-				s = i
-				i = (i + e + 1) / 2
-				break
-			}
-			if p[n] > path[n] {
-				e = i
-				i = (i + s) / 2
-				break
-			}
-		}
-		if n == m {
-			return c.handler
+	if t.node != nil {
+		a, b := t.node.lookup(path, rq)
+		if a != nil {
+			return a, b
 		}
 	}
-	return nil
-}
-
-type deepTree struct {
-	max    int
-	trees  []*tree
-	cache  []string
-	static []*staticData
-}
-
-func quickFind(sd []*staticData, n int) *staticData {
-	e := len(sd)
-	s := -1
-	for m := e / 2; s < m && m < e; {
-		v := sd[m].length
-		if n > v {
-			s = m
-			m = (m + e + 1) / 2
-			continue
+	if len(t.nodes) > rq.deep {
+		d := t.nodes[rq.deep]
+		if d != nil {
+			return d.handler, d.params
 		}
-		if n < v {
-			e = m
-			m = (s + m) / 2
-			continue
-		}
-		return sd[m]
 	}
-	return nil
+	return nil, nil
 }

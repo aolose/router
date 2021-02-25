@@ -1,152 +1,125 @@
 package anysrv
 
-import (
-	"sort"
-)
-
-type router [7]*deepTree
-
-func (r *router) Lookup(method, path string) (Handler, *node) {
-	dt := r[getMethodCode(method)]
-	d := 0
-	var st *staticData
-	path = path[1:]
-	l := len(path)
-	if l == 0 {
-		st = quickFind(dt.static, 0)
-	} else {
-		if path[l-1] == '/' {
-			l--
-			path = path[:l]
-		}
-		st = quickFind(dt.static, l)
-	}
-	if st != nil {
-		h := st.macth(path)
-		if h != nil {
-			return h, nil
-		}
-	}
-	ss := 0
-	mx := dt.max - 2
-	for s := 0; s < l; s++ {
-		if path[ss] == '/' {
-			dt.cache[d] = path[:ss]
-			if d > mx {
-				return nil, nil
-			}
-			d++
-			path = path[ss+1:]
-			ss = 0
-		} else {
-			ss++
-		}
-	}
-	dt.cache[d] = path
-	tre := dt.trees[d]
-	if tre != nil {
-		n := tre.levels[0].nodes[0].match(dt.cache)
-		if n != nil {
-			return n.handle, n
-		}
-	}
-	return nil, nil
+type router struct {
+	trees [7][]*tree
 }
 
-func (r *router) bind(m int, path string, h Handler) {
-	dp := 0
-	l := len(path)
-	if l > 1 && path[l-1] == '/' {
-		l--
-		path = path[:l]
+func newRouter() *router {
+	r := &router{}
+	for i := 0; i < 7; i++ {
+		r.trees[i] = make([]*tree, 0, 0)
 	}
-	if l > 0 && path[0] == '/' {
-		path = path[1:]
-		l--
-	}
-	n, isStatic := deep(path)
-	if isStatic {
-		sl := r[m].static
-		nl := len(sl)
-		for i := 0; i < nl; i++ {
-			if sl[i].length == l {
-				sl[i].add(path, h)
-				return
-			}
-		}
-		if cap(sl) == nl {
-			v := make([]*staticData, nl+1, nl+1)
-			copy(v, sl)
-			sl = v
-		}
-		r[m].static = sl[:nl+1]
-		sd := &staticData{
-			length: l,
-			paths:  make([]*staticHandler, 0, 0),
-		}
-		sd.add(path, h)
-		r[m].static[nl] = sd
-		return
-	}
-	if n > r[m].max {
-		r[m].max = n
-		tr := r[m].trees
-		if n > cap(tr) {
-			v := make([]*tree, n+4, n+4)
-			copy(v, tr)
-			r[m].trees = v
-		}
-		r[m].trees = r[m].trees[:n]
-	}
-	var pr *node
-	u := n - 1
-	dt := r[m].trees[u]
-	if dt == nil {
-		dt = newTree(n, 4)
-		r[m].trees[u] = dt
-	}
-	ss := 0
-	for s := 0; s < l; s++ {
-		if s == l-1 || path[s+1] == '/' {
-			pr = dt.levels[dp].bind(pr, path[ss:s+1])
-			ss = s + 2
-			dp++
-		}
-	}
-	pr.handle = h
+	return r
 }
 
 func (r *router) ready() {
 	for i := 0; i < 7; i++ {
-		dt := r[i]
-		sort.Slice(dt.static, func(i, j int) bool {
-			return dt.static[i].length < dt.static[j].length
-		})
-		for _, v := range dt.static {
-			v.startIndex = len(v.paths) / 2
-			sort.Slice(v.paths, func(i, j int) bool {
-				return sort.StringsAreSorted([]string{
-					v.paths[i].path, v.paths[j].path,
-				})
-			})
-		}
-		for _, v := range dt.trees {
-			if v != nil {
-				v.ready()
+		for _, t := range r.trees[i] {
+			if t != nil {
+				t.ready()
 			}
 		}
-		dt.cache = make([]string, dt.max, dt.max)
 	}
 }
 
-func newRouter() *router {
-	return &router{
-		&deepTree{trees: make([]*tree, 0, 0)},
-		&deepTree{trees: make([]*tree, 0, 0)},
-		&deepTree{trees: make([]*tree, 0, 0)},
-		&deepTree{trees: make([]*tree, 0, 0)},
-		&deepTree{trees: make([]*tree, 0, 0)},
-		&deepTree{trees: make([]*tree, 0, 0)},
-		&deepTree{trees: make([]*tree, 0, 0)},
+func (r *router) bind(code int, path string, h Handler) {
+	l := len(path)
+	if l > 0 {
+		if path[0] == '/' {
+			path = path[1:]
+			l--
+		}
+		if l > 0 {
+			if path[l-1] == '/' {
+				path = path[:l-1]
+				l--
+			}
+		}
 	}
+	isStatic := l == 0 || path[0] != ':'
+	allParams := !isStatic
+	s := make([]int, l/2+1)
+	e := make([]int, l/2+1)
+	n := make([]int, l/2+1)
+	d := 0
+	m := 0
+	for i := 1; i < l-1; i++ {
+		c := path[i]
+		if c == ':' {
+			n[m] = d
+			m++
+			isStatic = false
+		} else {
+			if i-1 == e[d] {
+				allParams = false
+			}
+			if c == '/' {
+				s[d+1] = i + 1
+				e[d] = i
+				d++
+			}
+		}
+	}
+	e[d] = l
+	s = s[:d+1]
+	e = e[:d+1]
+	n = n[:m+1]
+	ts := r.trees[code]
+	if d >= len(ts) {
+		tt := make([]*tree, d+1, d+1)
+		copy(tt, ts)
+		tt[d] = &tree{
+			static: make([][]*staticNode, 0, 0),
+			raw:    make([]*rawNode, 0, 0),
+			nodes:  make([]*node, 0, 0),
+		}
+		ts = tt
+		r.trees[code] = tt
+	}
+	t := ts[d]
+	if t == nil {
+		t = &tree{
+			static: make([][]*staticNode, 0, 0),
+			raw:    make([]*rawNode, 0, 0),
+		}
+		ts[d] = t
+	}
+	if isStatic {
+		t.addStatic(path, h)
+	} else if allParams {
+		if len(t.nodes) < d+1 {
+			a := make([]*node, d+1)
+			copy(a, t.nodes)
+			t.nodes = a
+		}
+		t.nodes = make([]*node, d+1)
+		for i := 0; i <= d; i++ {
+			nd := &node{
+				handler: h,
+				deep:    i,
+				params:  make([]*param, d+1),
+			}
+			t.nodes[i] = nd
+			for j := 0; j <= d; j++ {
+				nd.params[j] = &param{
+					name: path[s[j]+1 : e[j]],
+					deep: j,
+				}
+			}
+		}
+	} else {
+		t.addNode(path, h, s, e, n)
+	}
+}
+
+func (r *router) Lookup(method string, path string) (Handler, []*param) {
+	rq := parseReqPath(path)
+	ts := r.trees[getMethodCode(method)]
+	if len(ts) > rq.deep {
+		t := ts[rq.deep]
+		if t != nil {
+			return t.lookup(&path, rq)
+		}
+	}
+	return nil, nil
 }

@@ -24,8 +24,8 @@ func New() *App {
 func (app *App) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	app.ctx.req = req
 	app.ctx.resp = res
-	next, node := app.router.Lookup(req.Method, req.URL.Path)
-	app.ctx.node = node
+	next, params := app.router.Lookup(req.Method, req.URL.Path)
+	app.ctx.params = params
 	for _, m := range app.middleware {
 		next = m(next)
 	}

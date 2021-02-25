@@ -1,65 +1,83 @@
 package anysrv
 
-func deep(path string) (int, bool) {
-	isStatic := true
-	d := 1
-	l := len(path)
-	if l > 0 {
-		l = l - 1
-		for i := 0; i < l; i++ {
-			p := path[i]
-			if p == '/' {
-				d++
-			}
-			if isStatic {
-				if p == ':' || p == '*' {
-					isStatic = false
-				}
-			}
-		}
-		if isStatic {
-			return d, path[l] != '*'
+import "sort"
+
+//   /a/b
+func parseReqPath(path string) *reqPath {
+	l := len(path) - 1
+	d := l/2 + 1
+	p := 0
+	s := make([]int, d, d)
+	e := make([]int, d, d)
+	s[0] = 1
+	e[0] = 1
+	for i := 2; i < l; i++ {
+		if path[i] == '/' {
+			s[p+1] = i + 1
+			e[p] = i
+			p++
 		}
 	}
-	return d, isStatic
+	e[p] = l + 1
+	return &reqPath{
+		length: l,
+		deep:   p,
+		start:  s[:p+1],
+		end:    e[:p+1],
+	}
 }
 
-func match(n *node, real string) bool {
-	switch n.cate {
-	//:*
-	case 0, 1:
-		return true
-	//aa aa
-	case 2:
-		return n.path == real
-	//abc*
-	case 3:
-		l := len(n.path) - 1
-		if l > len(real) {
-			return false
+func addRawNode(r *rawNode, rs *[]*rawNode, path string) *rawNode {
+	s := len(path) > 0 && path[0] == ':'
+	if s {
+		path = path[1:]
+	}
+	if r != nil {
+		rs = &r.nodes
+	}
+	for _, nd := range *rs {
+		if nd.path == path && nd.skip == s {
+			return nd
 		}
-		p := n.path
-		for i := 0; i < l-1; i++ {
-			if p[i] != real[i] {
-				return false
-			}
+	}
+	n := &rawNode{
+		parent: r,
+		nodes:  make([]*rawNode, 0, 0),
+		deep:   0,
+		path:   path,
+		skip:   s,
+	}
+	if r != nil {
+		n.deep = r.deep + 1
+	}
+	l := len(*rs) + 1
+	nn := make([]*rawNode, l, l)
+	copy(nn, *rs)
+	nn[l-1] = n
+	*rs = nn
+	return n
+}
+
+func sortRawNode(ns []*rawNode) {
+	sort.Slice(ns, func(i, j int) bool {
+		if ns[i].skip != ns[j].skip {
+			return !ns[i].skip
 		}
-		return true
-	//*abc
-	case 4:
-		p := n.path
-		l := len(p) - 1
-		if l > len(real) {
-			return false
+		return sort.StringsAreSorted([]string{
+			ns[i].path,
+			ns[j].path,
+		})
+	})
+	var d *rawNode
+	for _, n := range ns {
+		if d != nil {
+			d.right = n
 		}
-		r := len(real)
-		for i := 0; i < l; i++ {
-			if p[i+1] != real[r-l+i] {
-				return false
-			}
+		d = n
+	}
+	if d != nil {
+		if d.parent != nil {
+			d.right = d.parent.right
 		}
-		return true
-	default:
-		return false
 	}
 }
