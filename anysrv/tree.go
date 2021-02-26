@@ -4,7 +4,7 @@ import "sort"
 
 type tree struct {
 	static [][]*staticNode
-	raw    []*rawNode
+	raw    []*node
 	node   *node
 	nodes  []*node
 }
@@ -17,7 +17,7 @@ func (t *tree) addNode(path string, h Handler, start, end, pm []int) {
 			deep: d,
 		}
 	}
-	var r *rawNode
+	var r *node
 
 	l := len(start)
 	for i := 0; i < l; i++ {
@@ -28,7 +28,7 @@ func (t *tree) addNode(path string, h Handler, start, end, pm []int) {
 	}
 	if r != nil {
 		r.handler = h
-		r.params = ps
+		r.params = &ps
 	}
 }
 func (t *tree) addStatic(path string, h Handler) {
@@ -58,9 +58,7 @@ func (t *tree) addStatic(path string, h Handler) {
 }
 func (t *tree) ready() {
 	sortRawNode(t.raw)
-	for _, r := range t.raw {
-		r.ready()
-	}
+	readNs(&t.raw, nil)
 	for _, a := range t.static {
 		if a != nil {
 			sort.Slice(a, func(i, j int) bool {
@@ -71,13 +69,9 @@ func (t *tree) ready() {
 			})
 		}
 	}
-
-	nd := &node{}
 	if len(t.raw) > 0 {
-		t.raw[0].toNode(nd, nd)
+		t.node = t.raw[0]
 	}
-	t.node = nd
-	t.raw = nil
 }
 
 func (t *tree) lookup(path *string, deep, n int) (Handler, *[]*param) {
@@ -121,7 +115,7 @@ func (t *tree) lookup(path *string, deep, n int) (Handler, *[]*param) {
 	if len(t.nodes) > deep {
 		d := t.nodes[deep]
 		if d != nil {
-			return d.handler, &d.params
+			return d.handler, d.params
 		}
 	}
 	return nil, nil

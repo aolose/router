@@ -70,7 +70,7 @@ func (r *router) bind(code int, path string, h Handler) {
 		copy(tt, ts)
 		tt[d] = &tree{
 			static: make([][]*staticNode, 0, 0),
-			raw:    make([]*rawNode, 0, 0),
+			raw:    make([]*node, 0, 0),
 			nodes:  make([]*node, 0, 0),
 		}
 		ts = tt
@@ -80,7 +80,7 @@ func (r *router) bind(code int, path string, h Handler) {
 	if t == nil {
 		t = &tree{
 			static: make([][]*staticNode, 0, 0),
-			raw:    make([]*rawNode, 0, 0),
+			raw:    make([]*node, 0, 0),
 		}
 		ts[d] = t
 	}
@@ -94,14 +94,15 @@ func (r *router) bind(code int, path string, h Handler) {
 		}
 		t.nodes = make([]*node, d+1)
 		for i := 0; i <= d; i++ {
+			pm := make([]*param, d+1)
 			nd := &node{
 				handler: h,
 				deep:    i,
-				params:  make([]*param, d+1),
+				params:  &pm,
 			}
 			t.nodes[i] = nd
 			for j := 0; j <= d; j++ {
-				nd.params[j] = &param{
+				(*nd.params)[j] = &param{
 					name: path[s[j]+1 : e[j]],
 					deep: j,
 				}

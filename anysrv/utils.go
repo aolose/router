@@ -30,7 +30,7 @@ func parseReqPath(path string) *reqPath {
 	}
 }
 
-func addRawNode(r *rawNode, rs *[]*rawNode, path string) *rawNode {
+func addRawNode(r *node, rs *[]*node, path string) *node {
 	s := len(path) > 0 && path[0] == ':'
 	if s {
 		path = path[1:]
@@ -43,9 +43,9 @@ func addRawNode(r *rawNode, rs *[]*rawNode, path string) *rawNode {
 			return nd
 		}
 	}
-	n := &rawNode{
+	n := &node{
 		parent: r,
-		nodes:  make([]*rawNode, 0, 0),
+		nodes:  make([]*node, 0, 0),
 		deep:   0,
 		path:   path,
 		skip:   s,
@@ -54,29 +54,37 @@ func addRawNode(r *rawNode, rs *[]*rawNode, path string) *rawNode {
 		n.deep = r.deep + 1
 	}
 	l := len(*rs) + 1
-	nn := make([]*rawNode, l, l)
+	nn := make([]*node, l, l)
 	copy(nn, *rs)
 	nn[l-1] = n
 	*rs = nn
 	return n
 }
 
-func sortRawNode(ns []*rawNode) {
-	sort.Slice(ns, func(i, j int) bool {
-		if ns[i].skip != ns[j].skip {
-			return !ns[i].skip
-		}
-		return sort.StringsAreSorted([]string{
-			ns[i].path,
-			ns[j].path,
+func sortRawNode(ns []*node) {
+	if len(ns) > 2 {
+		sort.Slice(ns, func(i, j int) bool {
+			if ns[i].deep != ns[j].deep {
+				return sort.IntsAreSorted([]int{
+					ns[i].deep,
+					ns[j].deep,
+				})
+			}
+			return sort.StringsAreSorted([]string{
+				ns[i].path,
+				ns[j].path,
+			})
 		})
-	})
-	var d *rawNode
+	}
+	var d *node
 	for _, n := range ns {
 		if d != nil {
 			d.right = n
 		}
 		d = n
+		if len(n.nodes) > 0 {
+			n.next = n.nodes[0]
+		}
 	}
 	if d != nil {
 		if d.parent != nil {
