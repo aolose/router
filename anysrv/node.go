@@ -9,23 +9,23 @@ type node struct {
 	params  []*param
 }
 
-func (n *node) lookup(path *string, rq *reqPath) (Handler, []*param) {
-	s := rq.start[n.deep]
-	e := rq.end[n.deep]
+func (n *node) lookup(path *string) (Handler, *[]*param) {
+	s := share[0][n.deep]
+	e := share[1][n.deep]
 	if n.path == (*path)[s:e] {
 		if n.next != nil {
-			h, d := n.next.lookup(path, rq)
+			h, d := n.next.lookup(path)
 			if h != nil {
 				return h, d
 			}
 		}
 		if n.handler != nil {
-			return n.handler, n.params
+			return n.handler, &n.params
 		}
 	}
 
 	if n.right != nil {
-		return n.right.lookup(path, rq)
+		return n.right.lookup(path)
 	}
 	return nil, nil
 }

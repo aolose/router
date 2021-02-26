@@ -14,7 +14,7 @@ type Context interface {
 }
 
 type context struct {
-	params []*param
+	params *[]*param
 	req    *http.Request
 	resp   http.ResponseWriter
 	code   int
@@ -28,7 +28,7 @@ func (c *context) Resp() http.ResponseWriter {
 }
 func (c *context) Param(name string) string {
 	if c.params != nil {
-		for _, n := range c.params {
+		for _, n := range *(c.params) {
 			p := c.Path()
 			rq := parseReqPath(p)
 			if n.name == name {
@@ -43,7 +43,7 @@ func (c *context) Params() map[string]string {
 	m := make(map[string]string)
 	p := c.Path()
 	rq := parseReqPath(p)
-	for _, n := range c.params {
+	for _, n := range *c.params {
 		m[n.name] = p[rq.start[n.deep]:rq.end[n.deep]]
 	}
 	return m

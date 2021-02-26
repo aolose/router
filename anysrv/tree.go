@@ -80,21 +80,19 @@ func (t *tree) ready() {
 	t.raw = nil
 }
 
-func (t *tree) lookup(path *string, rq *reqPath) (Handler, []*param) {
-	n := rq.length
+func (t *tree) lookup(path *string, deep, n int) (Handler, *[]*param) {
 	if len(t.static) > n {
 		st := t.static[n]
 		if st != nil {
 			l := len(st)
 			e := l
 			s := -1
-			pt := (*path)[1:]
 			for m := l / 2; s < e && m > s && m < e; {
 				p := st[m]
 				i := 0
 				for ; i < n; i++ {
 					c0 := p.path[i]
-					c1 := pt[i]
+					c1 := (*path)[i+1]
 					if c0 == c1 {
 						continue
 					}
@@ -115,15 +113,15 @@ func (t *tree) lookup(path *string, rq *reqPath) (Handler, []*param) {
 		}
 	}
 	if t.node != nil {
-		a, b := t.node.lookup(path, rq)
+		a, b := t.node.lookup(path)
 		if a != nil {
 			return a, b
 		}
 	}
-	if len(t.nodes) > rq.deep {
-		d := t.nodes[rq.deep]
+	if len(t.nodes) > deep {
+		d := t.nodes[deep]
 		if d != nil {
-			return d.handler, d.params
+			return d.handler, &d.params
 		}
 	}
 	return nil, nil

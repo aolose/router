@@ -112,13 +112,26 @@ func (r *router) bind(code int, path string, h Handler) {
 	}
 }
 
-func (r *router) Lookup(method string, path string) (Handler, []*param) {
-	rq := parseReqPath(path)
+func (r *router) Lookup(method string, path string) (Handler, *[]*param) {
+	l := len(path)
+	d := 0
+	i := 1
+	for ; i < l-1; i++ {
+		if path[i] == '/' {
+			share[0][d+1] = i + 1
+			share[1][d] = i
+			d++
+		}
+	}
+	if i < l && path[i] == '/' {
+		l--
+	}
+	share[1][d] = l
 	ts := r.trees[getMethodCode(method)]
-	if len(ts) > rq.deep {
-		t := ts[rq.deep]
+	if len(ts) > d {
+		t := ts[d]
 		if t != nil {
-			return t.lookup(&path, rq)
+			return t.lookup(&path, d, l-1)
 		}
 	}
 	return nil, nil

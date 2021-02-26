@@ -2,13 +2,16 @@ package anysrv
 
 import "sort"
 
+var share = [3][128]int{
+	{1}, {1}, {1},
+}
+
 //   /a/b
 func parseReqPath(path string) *reqPath {
 	l := len(path) - 1
-	d := l/2 + 1
 	p := 0
-	s := make([]int, d, d)
-	e := make([]int, d, d)
+	s := share[0]
+	e := share[1]
 	s[0] = 1
 	e[0] = 1
 	for i := 2; i < l; i++ {
@@ -22,8 +25,8 @@ func parseReqPath(path string) *reqPath {
 	return &reqPath{
 		length: l,
 		deep:   p,
-		start:  s[:p+1],
-		end:    e[:p+1],
+		start:  &s,
+		end:    &e,
 	}
 }
 
