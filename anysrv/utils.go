@@ -2,8 +2,8 @@ package anysrv
 
 import "sort"
 
-var share = [3][128]int{
-	{1}, {1}, {1},
+var share = [2][128]int{
+	{1}, {1},
 }
 
 //   /a/b

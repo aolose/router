@@ -50,10 +50,10 @@ func (r *router) bind(code int, path string, h Handler) {
 			m++
 			isStatic = false
 		} else {
-			if i-1 == e[d] {
-				allParams = false
-			}
 			if c == '/' {
+				if path[i+1] != ':' {
+					allParams = false
+				}
 				s[d+1] = i + 1
 				e[d] = i
 				d++

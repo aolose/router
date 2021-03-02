@@ -13,7 +13,7 @@ func TestRouter(t *testing.T) {
 		method  int
 		handler Handler
 	}{
-		{"/:a", 0, func(c Context) { a = "h0" }},
+		{"/:a/:b/:c/:d/:e", 0, func(c Context) { a = "h0" }},
 		//{"", 0, func(c Context) { a = "h0" }},
 		//{"b/b", 0, func(c Context) { a = "h1" }},
 		//{"b/c", 0, func(c Context) { a = "h2" }},
@@ -32,7 +32,7 @@ func TestRouter(t *testing.T) {
 		r string
 		m bool
 	}{
-		{"aaa", "h0", false},
+		{"/aaa/aaa/aaa/aaa/aaa", "h0", false},
 		//{"b/b", "h1", false},
 		//{"/b/c", "h2", false},
 		//{"a/b", "h3", false},

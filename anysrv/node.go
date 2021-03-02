@@ -43,9 +43,7 @@ func readNs(ns *[]*node, p *node) {
 }
 
 func (n *node) lookup(path *string) (Handler, *[]*param) {
-	s := share[0][n.deep]
-	e := share[1][n.deep]
-	if n.path == (*path)[s:e] {
+	if n.path == (*path)[share[0][n.deep]:share[1][n.deep]] {
 		if n.next != nil {
 			h, d := n.next.lookup(path)
 			if h != nil {
