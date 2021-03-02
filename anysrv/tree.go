@@ -75,37 +75,6 @@ func (t *tree) ready() {
 }
 
 func (t *tree) lookup(path *string, deep, n int) (Handler, *[]*param) {
-	if len(t.static) > n {
-		st := t.static[n]
-		if st != nil {
-			l := len(st)
-			e := l
-			s := -1
-			for m := l / 2; s < e && m > s && m < e; {
-				p := st[m]
-				i := 0
-				for ; i < n; i++ {
-					c0 := p.path[i]
-					c1 := (*path)[i+1]
-					if c0 == c1 {
-						continue
-					}
-					if c0 > c1 {
-						e = m
-						m = (e + s + 1) / 2
-						break
-					} else {
-						s = m
-						m = (e + s + 1) / 2
-						break
-					}
-				}
-				if i == n {
-					return p.handler, nil
-				}
-			}
-		}
-	}
 	if t.node != nil {
 		a, b := t.node.lookup(path)
 		if a != nil {
