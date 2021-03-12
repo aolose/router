@@ -19,7 +19,11 @@ func parseReqPath(path string) *reqPath {
 			p++
 		}
 	}
-	e[p] = l + 1
+	if l > 0 && path[l] == '/' {
+		e[p] = l
+	} else {
+		e[p] = l + 1
+	}
 	return &reqPath{
 		length: l,
 		deep:   p,

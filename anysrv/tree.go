@@ -1,10 +1,5 @@
 package anysrv
 
-type paramNode struct {
-	handler Handler
-	params  *[]*param
-}
-
 type tree struct {
 	nodes [][]*node
 	right *node
@@ -14,7 +9,7 @@ func (t *tree) addNode(path string, h Handler, start, end, pm []int) {
 	ps := make([]*param, len(pm))
 	for i, d := range pm {
 		ps[i] = &param{
-			name: path[start[d]:end[d]],
+			name: path[start[d]+1 : end[d]],
 			deep: d,
 		}
 	}

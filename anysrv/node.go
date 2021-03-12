@@ -64,7 +64,7 @@ func lookupNs(ns [][]*node, right *node, path *string, deep int) (Handler, *[]*p
 			l = len(n)
 			e := l
 			s := -1
-			for m := l / 2; s < e && m > s && m < e; {
+			for m := l / 2; m > s && m < e; {
 				p := n[m]
 				i := st
 				for ; i < en; i++ {

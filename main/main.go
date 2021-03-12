@@ -1,13 +1,14 @@
 package main
 
-import (
-	"fmt"
-	_ "net/http/pprof"
-	"sort"
-)
+import "anysrv"
 
 func main() {
-	a := []int{2, 3, 4, 6, 9, 8, 1}
-	sort.Ints(a[1:])
-	fmt.Printf("%v", a)
+	app := anysrv.New()
+	app.Get("/", func(c anysrv.Context) {
+		c.String("hello world")
+	})
+	app.Get("/:d", func(c anysrv.Context) {
+		c.String(c.Param("d"))
+	})
+	app.Run("127.0.0.1", 8088)
 }
