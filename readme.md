@@ -4,7 +4,7 @@ Anysrv is a high-performance web server with a clean API.
 
 ### Benchmark
 
-Anysrv Aero vs Gin vs HttpRouter
+Anysrv vs Aero vs Gin vs HttpRouter
 
 ```
 GOROOT=C:\Program Files\Go #gosetup
