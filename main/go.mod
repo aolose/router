@@ -6,5 +6,5 @@ require (
 	anysrv v0.0.0
 )
 replace (
-	anysrv  => ../anysrv
+	anysrv  => ../
 )

@@ -127,9 +127,9 @@ func (r *router) bind(code int, path string, h Handler) {
 		}
 	}
 	isStatic := l == 0 || path[0] != ':'
-	s := make([]int, 0)
-	e := make([]int, 0)
-	n := make([]int, 0)
+	s := make([]int, 2)
+	e := make([]int, 2)
+	n := make([]int, 2)
 	d := 0
 	m := 0
 	for i := 1; i < l-1; i++ {
@@ -152,7 +152,7 @@ func (r *router) bind(code int, path string, h Handler) {
 		mark(&e, l, d)
 		s = s[:d+1]
 		e = e[:d+1]
-		n = n[:m+1]
+		n = n[:m]
 		ts := r.trees[code]
 		if d >= len(ts) {
 			tt := make([]*tree, d+1, d+1)
