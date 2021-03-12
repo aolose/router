@@ -1,15 +1,14 @@
 package anysrv
 
-var share = [2][128]int{
-	{1}, {1},
-}
+var share0 = [128]int{1}
+var share1 = [128]int{1}
 
 //   /a/b
 func parseReqPath(path string) *reqPath {
 	l := len(path) - 1
 	p := 0
-	s := share[0]
-	e := share[1]
+	s := share0
+	e := share1
 	s[0] = 1
 	e[0] = 1
 	for i := 2; i < l; i++ {

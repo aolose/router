@@ -55,8 +55,8 @@ func (n *node) Add(path string) *node {
 }
 
 func lookupNs(ns [][]*node, right *node, path *string, deep int) (Handler, *[]*param) {
-	st := share[0][deep]
-	en := share[1][deep]
+	st := share0[deep]
+	en := share1[deep]
 	l := en - st - 1
 	if len(ns) > l {
 		n := ns[l]

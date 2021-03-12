@@ -181,12 +181,12 @@ func (r *router) Lookup(method string, path string) (Handler, *[]*param) {
 	i := 1
 	for ; i < l-1; i++ {
 		if path[i] == '/' {
-			share[0][d+1] = i + 1
-			share[1][d] = i
+			share0[d+1] = i + 1
+			share1[d] = i
 			d++
 		}
 	}
-	share[1][d] = l
+	share1[d] = l
 	ts := r.trees[cd]
 	if len(ts) > d {
 		t := ts[d]
