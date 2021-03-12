@@ -1,12 +1,13 @@
 package anysrv
 
-import "sort"
+type paramNode struct {
+	handler Handler
+	params  *[]*param
+}
 
 type tree struct {
-	static [][]*staticNode
-	raw    []*node
-	node   *node
-	nodes  []*node
+	nodes [][]*node
+	right *node
 }
 
 func (t *tree) addNode(path string, h Handler, start, end, pm []int) {
@@ -18,74 +19,60 @@ func (t *tree) addNode(path string, h Handler, start, end, pm []int) {
 		}
 	}
 	var r *node
-
 	l := len(start)
+Loop:
 	for i := 0; i < l; i++ {
 		s := start[i]
 		e := end[i]
 		p := path[s:e]
-		r = addRawNode(r, &t.raw, p)
-	}
-	if r != nil {
-		r.handler = h
-		r.params = &ps
-	}
-}
-func (t *tree) addStatic(path string, h Handler) {
-	l := len(path)
-	st := t.static
-	if len(st) <= l {
-		ss := make([][]*staticNode, l+1, l+1)
-		copy(ss, st)
-		ss[l] = make([]*staticNode, 0, 0)
-		t.static = ss
-	}
-	s := t.static[l]
-	for _, p := range s {
-		if p.path == path {
-			return
+		if path[s] == ':' && i == 0 {
+			if t.right == nil {
+				r = &node{
+					deep:  1,
+					nodes: make([][]*node, 0, 0),
+				}
+				t.right = r
+			}
+			continue
+		} else {
+			if r == nil {
+				l0 := e - s
+				l1 := len(t.nodes)
+				if l1 < l0 {
+					tt := make([][]*node, l0, l0)
+					copy(tt, t.nodes)
+					t.nodes = tt
+				} else {
+					for _, rr := range t.nodes[l0-1] {
+						if rr.path == p {
+							r = rr
+							continue Loop
+						}
+					}
+				}
+				r = &node{
+					deep:  1,
+					path:  p,
+					nodes: make([][]*node, 0, 0),
+				}
+				tt := t.nodes[l0-1]
+				if tt == nil {
+					tt = make([]*node, 0, 0)
+					t.nodes[l0-1] = tt
+				}
+				ln := len(tt) + 1
+				tn := make([]*node, ln, ln)
+				copy(tn, tt)
+				tn[ln-1] = r
+				t.nodes[l0-1] = tn
+			} else {
+				r = r.Add(p)
+			}
 		}
 	}
-	n := len(s) + 1
-	ss := make([]*staticNode, n, n)
-	n--
-	copy(ss, s)
-	ss[n] = &staticNode{
-		path:    path,
-		handler: h,
-	}
-	t.static[l] = ss
+	r.handler = h
+	r.params = &ps
 }
 func (t *tree) ready() {
-	sortRawNode(t.raw)
-	readNs(&t.raw, nil)
-	for _, a := range t.static {
-		if a != nil {
-			sort.Slice(a, func(i, j int) bool {
-				return sort.StringsAreSorted([]string{
-					a[i].path,
-					a[j].path,
-				})
-			})
-		}
-	}
-	if len(t.raw) > 0 {
-		t.node = t.raw[0]
-	}
-}
-
-func (t *tree) lookup(path *string, deep, n int) (Handler, *[]*param) {
-	if t.node != nil {
-		a, b := t.node.lookup(path)
-		if a != nil {
-			return a, b
-		}
-	}
-	if len(t.nodes) > deep {
-		d := t.nodes[deep]
-		if d != nil {
-			return d.handler, d.params
-		}
-	}
-	return nil, nil
+	readNs(t.nodes, t.right)
 }

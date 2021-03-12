@@ -1,17 +1,13 @@
 package main
 
 import (
-	"anysrv"
+	"fmt"
 	_ "net/http/pprof"
+	"sort"
 )
 
 func main() {
-	app := anysrv.New()
-	app.Get("/", func(c anysrv.Context) {
-		c.String("hello world")
-	})
-	app.Get("/:d/:a/:b:/c:/:e", func(c anysrv.Context) {
-		c.String(c.Param("e"))
-	})
-	app.Run("127.0.0.1", 8088)
+	a := []int{2, 3, 4, 6, 9, 8, 1}
+	sort.Ints(a[1:])
+	fmt.Printf("%v", a)
 }

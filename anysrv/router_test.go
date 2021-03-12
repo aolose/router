@@ -13,16 +13,16 @@ func TestRouter(t *testing.T) {
 		method  int
 		handler Handler
 	}{
-		{"/:a/:b/:c/:d/:e", 0, func(c Context) { a = "h0" }},
+		//{"/:a/:b/:c/:d/:e", 0, func(c Context) { a = "h0" }},
 		//{"", 0, func(c Context) { a = "h0" }},
 		//{"b/b", 0, func(c Context) { a = "h1" }},
 		//{"b/c", 0, func(c Context) { a = "h2" }},
 		//{"a/b", 0, func(c Context) { a = "h3" }},
 		//{"/a/b/c", 0, func(c Context) { a = "h4" }},
 		//{"/a/c", 0, func(c Context) { a = "h5" }},
-		//{"/a/:c/e", 0, func(c Context) { a = "h6" }},
-		//{"/a/:c/f2", 0, func(c Context) { a = "h7" }},
-		//{"/a/:c/f1", 0, func(c Context) { a = "h8" }},
+		{"/a/:c/e", 0, func(c Context) { a = "h6" }},
+		{"/a/:c/f2", 0, func(c Context) { a = "h7" }},
+		{"/a/:c/f1", 0, func(c Context) { a = "h8" }},
 	} {
 		r.bind(p.method, p.path, p.handler)
 	}
@@ -32,7 +32,7 @@ func TestRouter(t *testing.T) {
 		r string
 		m bool
 	}{
-		{"/aaa/aaa/aaa/aaa/aaa", "h0", false},
+		//{"/aaa/aaa/aaa/aaa/aaa", "h0", false},
 		//{"b/b", "h1", false},
 		//{"/b/c", "h2", false},
 		//{"a/b", "h3", false},
@@ -40,7 +40,7 @@ func TestRouter(t *testing.T) {
 		//{"a/c", "h5", false},
 		//{"a/x/e", "h6", false},
 		//{"a/b/f2", "h7", false},
-		//{"a/v/f1", "h8", false},
+		{"a/v/f1", "h8", false},
 		//{"a/v/f2/ddd", "h8", true},
 	} {
 		if p.u == "" || p.u[0] != '/' {
@@ -186,7 +186,7 @@ func TestRouter_Lookup(t *testing.T) {
 		{"GET", "/gitignore/templates"},
 		{"GET", "/gitignore/templates/:name"},
 		{"POST", "/markdown"},
-		{"POST", "/markdown/raw"},
+		{"POST", "/markdown/nodes"},
 		{"GET", "/meta"},
 		{"GET", "/rate_limit"},
 

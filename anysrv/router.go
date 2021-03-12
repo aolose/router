@@ -120,7 +120,6 @@ func (r *router) bind(code int, path string, h Handler) {
 		}
 	}
 	isStatic := l == 0 || path[0] != ':'
-	allParams := !isStatic
 	s := make([]int, l/2+1)
 	e := make([]int, l/2+1)
 	n := make([]int, l/2+1)
@@ -134,9 +133,6 @@ func (r *router) bind(code int, path string, h Handler) {
 			isStatic = false
 		} else {
 			if c == '/' {
-				if path[i+1] != ':' {
-					allParams = false
-				}
 				s[d+1] = i + 1
 				e[d] = i
 				d++
@@ -152,9 +148,7 @@ func (r *router) bind(code int, path string, h Handler) {
 		tt := make([]*tree, d+1, d+1)
 		copy(tt, ts)
 		tt[d] = &tree{
-			static: make([][]*staticNode, 0, 0),
-			raw:    make([]*node, 0, 0),
-			nodes:  make([]*node, 0, 0),
+			nodes: make([][]*node, 0, 0),
 		}
 		ts = tt
 		r.trees[code] = tt
@@ -162,35 +156,12 @@ func (r *router) bind(code int, path string, h Handler) {
 	t := ts[d]
 	if t == nil {
 		t = &tree{
-			static: make([][]*staticNode, 0, 0),
-			raw:    make([]*node, 0, 0),
+			nodes: make([][]*node, 0, 0),
 		}
 		ts[d] = t
 	}
 	if isStatic {
 		r.addStatic(code, path, h)
-	} else if allParams {
-		if len(t.nodes) < d+1 {
-			a := make([]*node, d+1)
-			copy(a, t.nodes)
-			t.nodes = a
-		}
-		t.nodes = make([]*node, d+1)
-		for i := 0; i <= d; i++ {
-			pm := make([]*param, d+1)
-			nd := &node{
-				handler: h,
-				deep:    i,
-				params:  &pm,
-			}
-			t.nodes[i] = nd
-			for j := 0; j <= d; j++ {
-				(*nd.params)[j] = &param{
-					name: path[s[j]+1 : e[j]],
-					deep: j,
-				}
-			}
-		}
 	} else {
 		t.addNode(path, h, s, e, n)
 	}
@@ -220,7 +191,7 @@ func (r *router) Lookup(method string, path string) (Handler, *[]*param) {
 	if len(ts) > d {
 		t := ts[d]
 		if t != nil {
-			return t.lookup(&path, d, l-1)
+			return lookupNs(t.nodes, t.right, &path, 0)
 		}
 	}
 	return nil, nil

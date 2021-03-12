@@ -1,62 +1,128 @@
 package anysrv
 
+import "sort"
+
 type node struct {
 	parent  *node
 	right   *node
-	next    *node
-	nodes   []*node
+	nodes   [][]*node
 	deep    int
 	path    string
 	handler Handler
-	skip    bool
 	params  *[]*param
 }
 
-func (r *node) new(path string) *node {
-	return addRawNode(r, &r.nodes, path)
+func (n *node) Add(path string) *node {
+	l := len(path)
+	if path[0] == ':' {
+		if n.right == nil {
+			n.right = &node{
+				parent: n,
+				path:   path,
+				deep:   n.deep + 1,
+				nodes:  make([][]*node, 0, 0),
+			}
+		}
+		return n.right
+	}
+	if l > len(n.nodes) {
+		ls := make([][]*node, l, l)
+		copy(ls, n.nodes)
+		n.nodes = ls
+	}
+	l--
+	if n.nodes[l] == nil {
+		n.nodes[l] = make([]*node, 0, 0)
+	}
+
+	for _, p0 := range n.nodes[l] {
+		if p0.path == path {
+			return p0
+		}
+	}
+	nd := &node{
+		parent: n,
+		path:   path,
+		deep:   n.deep + 1,
+		nodes:  make([][]*node, 0, 0),
+	}
+	ln := len(n.nodes[l])
+	nn := make([]*node, ln+1, ln+1)
+	copy(nn, n.nodes[l])
+	nn[ln] = nd
+	n.nodes[l] = nn
+	return nd
 }
 
-func readNs(ns *[]*node, p *node) {
-	for _, n := range *ns {
-		readNs(&n.nodes, n)
-	}
-	l := len(*ns)
-	for i := 0; i < l; i++ {
-		n := (*ns)[i]
-		if n.skip {
-			if len((*n).nodes) == 0 {
-				if n.handler != nil && p != nil {
-					p.params = n.params
-					p.handler = n.handler
-					*ns = append((*ns)[0:i], (*ns)[i+1:]...)
-					l--
-					i--
+func lookupNs(ns [][]*node, right *node, path *string, deep int) (Handler, *[]*param) {
+	st := share[0][deep]
+	en := share[1][deep]
+	l := en - st - 1
+	if len(ns) > l {
+		n := ns[l]
+		if n != nil {
+			l = len(n)
+			e := l
+			s := -1
+			for m := l / 2; s < e && m > s && m < e; {
+				p := n[m]
+				i := st
+				for ; i < en; i++ {
+					c0 := p.path[i-st]
+					c1 := (*path)[i]
+					if c0 == c1 {
+						continue
+					}
+					if c0 > c1 {
+						e = m
+						m = (e + s + 1) / 2
+						break
+					} else {
+						s = m
+						m = (e + s + 1) / 2
+						break
+					}
 				}
-			} else {
-				*ns = append(append((*ns)[0:i], (*ns)[i+1:]...), n.nodes...)
-				i--
-				l--
+				if i == en {
+					if p.handler != nil {
+						return p.handler, p.params
+					}
+					return lookupNs(p.nodes, p.right, path, p.deep)
+				}
 			}
 		}
 	}
-	sortRawNode(*ns)
-}
-
-func (n *node) lookup(path *string) (Handler, *[]*param) {
-	if n.path == (*path)[share[0][n.deep]:share[1][n.deep]] {
-		if n.next != nil {
-			h, d := n.next.lookup(path)
-			if h != nil {
-				return h, d
-			}
+	if right != nil {
+		if right.handler != nil {
+			return right.handler, right.params
 		}
-		if n.handler != nil {
-			return n.handler, n.params
-		}
-	}
-
-	if n.right != nil {
-		return n.right.lookup(path)
+		return lookupNs(right.nodes, right.right, path, right.deep)
 	}
 	return nil, nil
+}
+
+func readNs(ns [][]*node, right *node) {
+	if right != nil {
+		p := right.parent
+		if p != nil && p.parent != nil && len(p.nodes) == 0 {
+			p = p.parent
+			p.right = right
+		}
+		readNs(right.nodes, right.right)
+	}
+	for _, n := range ns {
+		if n != nil {
+			if len(n) > 1 {
+				sort.Slice(n, func(i, j int) bool {
+					return sort.StringsAreSorted([]string{
+						n[i].path,
+						n[j].path,
+					})
+				})
+			}
+			for _, nn := range n {
+				readNs(nn.nodes, nn.right)
+			}
+		}
+	}
 }
