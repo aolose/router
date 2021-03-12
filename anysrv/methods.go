@@ -12,7 +12,7 @@ const (
 
 func getMethodCode(method string) int {
 	switch method {
-	case "GET", "":
+	case "GET":
 		return GET
 	case "POST":
 		return POST

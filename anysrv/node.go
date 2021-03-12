@@ -35,9 +35,10 @@ func (n *node) Add(path string) *node {
 		n.nodes[l] = make([]*node, 0, 0)
 	}
 
-	for _, p0 := range n.nodes[l] {
-		if p0.path == path {
-			return p0
+	la := len(n.nodes[l])
+	for i := 0; i < la; i++ {
+		if n.nodes[l][i].path == path {
+			return n.nodes[l][i]
 		}
 	}
 	nd := &node{
@@ -54,40 +55,49 @@ func (n *node) Add(path string) *node {
 	return nd
 }
 
-func lookupNs(ns [][]*node, right *node, path *string, deep int) (Handler, *[]*param) {
-	st := share0[deep]
-	en := share1[deep]
+func lookupNs(ns *[][]*node, right *node, path *string, deep int) (Handler, *[]*param) {
+	st := mkA[deep]
+	en := mkB[deep]
 	l := en - st - 1
-	if len(ns) > l {
-		n := ns[l]
+	if len(*ns) > l {
+		n := (*ns)[l]
 		if n != nil {
 			l = len(n)
-			e := l
-			s := -1
-			for m := l / 2; m > s && m < e; {
-				p := n[m]
-				i := st
-				for ; i < en; i++ {
-					c0 := p.path[i-st]
-					c1 := (*path)[i]
-					if c0 == c1 {
-						continue
+			if l == 1 {
+				if n[0].path == (*path)[st:en] {
+					if n[0].handler != nil {
+						return n[0].handler, n[0].params
 					}
-					if c0 > c1 {
-						e = m
-						m = (e + s + 1) / 2
-						break
-					} else {
-						s = m
-						m = (e + s + 1) / 2
-						break
-					}
+					return lookupNs(&n[0].nodes, n[0].right, path, n[0].deep)
 				}
-				if i == en {
-					if p.handler != nil {
-						return p.handler, p.params
+			} else {
+				e := l
+				s := -1
+				for m := l / 2; m > s && m < e; {
+					p := n[m]
+					i := st
+					for ; i < en; i++ {
+						c0 := p.path[i-st]
+						c1 := (*path)[i]
+						if c0 == c1 {
+							continue
+						}
+						if c0 > c1 {
+							e = m
+							m = (e + s) / 2
+							break
+						} else {
+							s = m
+							m = (e + s) / 2
+							break
+						}
 					}
-					return lookupNs(p.nodes, p.right, path, p.deep)
+					if i == en {
+						if p.handler != nil {
+							return p.handler, p.params
+						}
+						return lookupNs(&p.nodes, p.right, path, p.deep)
+					}
 				}
 			}
 		}
@@ -96,7 +106,7 @@ func lookupNs(ns [][]*node, right *node, path *string, deep int) (Handler, *[]*p
 		if right.handler != nil {
 			return right.handler, right.params
 		}
-		return lookupNs(right.nodes, right.right, path, right.deep)
+		return lookupNs(&right.nodes, right.right, path, right.deep)
 	}
 	return nil, nil
 }

@@ -28,11 +28,13 @@ func (c *context) Resp() http.ResponseWriter {
 }
 func (c *context) Param(name string) string {
 	if c.params != nil {
-		for _, n := range *(c.params) {
+		l := len(*c.params)
+		for i := 0; i < l; i++ {
+			n := (*c.params)[i]
 			p := c.Path()
-			rq := parseReqPath(p)
+			parseReqPath(p)
 			if n.name == name {
-				return p[rq.start[n.deep]:rq.end[n.deep]]
+				return p[mkA[n.deep]:mkB[n.deep]]
 			}
 		}
 	}
@@ -42,9 +44,11 @@ func (c *context) Param(name string) string {
 func (c *context) Params() map[string]string {
 	m := make(map[string]string)
 	p := c.Path()
-	rq := parseReqPath(p)
-	for _, n := range *c.params {
-		m[n.name] = p[rq.start[n.deep]:rq.end[n.deep]]
+	parseReqPath(p)
+	l := len(*c.params)
+	for i := 0; i < l; i++ {
+		n := (*c.params)[i]
+		m[n.name] = p[mkA[n.deep]:mkB[n.deep]]
 	}
 	return m
 }

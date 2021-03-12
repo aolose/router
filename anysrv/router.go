@@ -46,29 +46,36 @@ func (r *router) getStatic(method, n int, path *string) Handler {
 		st := sa[n]
 		if st != nil {
 			l := len(st)
-			e := l
-			s := -1
-			for m := l / 2; m > s && m < e; {
-				p := st[m]
-				i := 0
-				for ; i < n; i++ {
-					c0 := p.path[i]
-					c1 := (*path)[i+1]
-					if c0 == c1 {
-						continue
-					}
-					if c0 > c1 {
-						e = m
-						m = (e + s + 1) / 2
-						break
-					} else {
-						s = m
-						m = (e + s + 1) / 2
-						break
-					}
+			if l == 1 {
+				if st[0].path == (*path)[1:] {
+					return st[0].handler
 				}
-				if i == n {
-					return p.handler
+			} else {
+				e := l
+				s := -1
+				for m := l / 2; m > s && m < e; {
+					p := st[m]
+					i := 0
+					for i < n {
+						c0 := p.path[i]
+						i++
+						c1 := (*path)[i]
+						if c0 == c1 {
+							continue
+						}
+						if c0 > c1 {
+							e = m
+							m = (e + s) / 2
+							break
+						} else {
+							s = m
+							m = (e + s) / 2
+							break
+						}
+					}
+					if i == n {
+						return p.handler
+					}
 				}
 			}
 		}
@@ -120,78 +127,77 @@ func (r *router) bind(code int, path string, h Handler) {
 		}
 	}
 	isStatic := l == 0 || path[0] != ':'
-	s := make([]int, l/2+1)
-	e := make([]int, l/2+1)
-	n := make([]int, l/2+1)
+	s := make([]int, 0)
+	e := make([]int, 0)
+	n := make([]int, 0)
 	d := 0
 	m := 0
 	for i := 1; i < l-1; i++ {
 		c := path[i]
 		if c == ':' {
-			n[m] = d
+			mark(&n, d, m)
 			m++
 			isStatic = false
 		} else {
 			if c == '/' {
-				s[d+1] = i + 1
-				e[d] = i
+				mark(&s, i+1, d+1)
+				mark(&e, i, d)
 				d++
 			}
 		}
 	}
-	e[d] = l
-	s = s[:d+1]
-	e = e[:d+1]
-	n = n[:m+1]
-	ts := r.trees[code]
-	if d >= len(ts) {
-		tt := make([]*tree, d+1, d+1)
-		copy(tt, ts)
-		tt[d] = &tree{
-			nodes: make([][]*node, 0, 0),
-		}
-		ts = tt
-		r.trees[code] = tt
-	}
-	t := ts[d]
-	if t == nil {
-		t = &tree{
-			nodes: make([][]*node, 0, 0),
-		}
-		ts[d] = t
-	}
 	if isStatic {
 		r.addStatic(code, path, h)
 	} else {
+		mark(&e, l, d)
+		s = s[:d+1]
+		e = e[:d+1]
+		n = n[:m+1]
+		ts := r.trees[code]
+		if d >= len(ts) {
+			tt := make([]*tree, d+1, d+1)
+			copy(tt, ts)
+			tt[d] = &tree{
+				nodes: make([][]*node, 0, 0),
+			}
+			ts = tt
+			r.trees[code] = tt
+		}
+		t := ts[d]
+		if t == nil {
+			t = &tree{
+				nodes: make([][]*node, 0, 0),
+			}
+			ts[d] = t
+		}
 		t.addNode(path, h, s, e, n)
 	}
 }
 
-func (r *router) Lookup(method string, path string) (Handler, *[]*param) {
-	l := len(path)
+func (r *router) Lookup(method string, path *string) (Handler, *[]*param) {
+	l := len(*path)
 	cd := getMethodCode(method)
-	if l > 1 && path[l-1] == '/' {
+	if l > 1 && (*path)[l-1] == '/' {
 		l--
 	}
-	s := r.getStatic(cd, l-1, &path)
+	s := r.getStatic(cd, l-1, path)
 	if s != nil {
 		return s, nil
 	}
 	d := 0
 	i := 1
 	for ; i < l-1; i++ {
-		if path[i] == '/' {
-			share0[d+1] = i + 1
-			share1[d] = i
+		if (*path)[i] == '/' {
+			mark(&mkA, i+1, d+1)
+			mark(&mkB, i, d)
 			d++
 		}
 	}
-	share1[d] = l
-	ts := r.trees[cd]
-	if len(ts) > d {
-		t := ts[d]
+	mark(&mkB, l, d)
+	if len(r.trees[cd]) > d {
+		t := r.trees[cd][d]
 		if t != nil {
-			return lookupNs(t.nodes, t.right, &path, 0)
+			return lookupNs(&t.nodes, t.right, path, 0)
 		}
 	}
 	return nil, nil

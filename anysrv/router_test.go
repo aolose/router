@@ -1,7 +1,6 @@
 package anysrv
 
 import (
-	"fmt"
 	"testing"
 )
 
@@ -46,7 +45,7 @@ func TestRouter(t *testing.T) {
 		if p.u == "" || p.u[0] != '/' {
 			p.u = "/" + p.u
 		}
-		h, _ := r.Lookup("GET", p.u)
+		h, _ := r.Lookup("GET", &p.u)
 		if h == nil {
 			if !p.m {
 				t.Errorf("lookup %s should return a Handler", p.u)
@@ -340,9 +339,8 @@ func TestRouter_Lookup(t *testing.T) {
 		})
 	}
 	r.ready()
-	fmt.Printf("%v", r)
 	for _, p := range v {
-		h, _ := r.Lookup(p.method, p.path)
+		h, _ := r.Lookup(p.method, &p.path)
 		if h == nil {
 			t.Errorf("%s %s 404", p.method, p.path)
 		} else {
