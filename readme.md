@@ -1,6 +1,4 @@
-# Anysrv
-
-Anysrv is a high-performance web server with a clean API.
+A high-performance web router.
 
 ### Benchmark
 
