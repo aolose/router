@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"sort"
 	"strconv"
 )
 
@@ -11,7 +12,10 @@ type App struct {
 	router     *router
 	middleware []Middleware
 	ctx        *context
+	cors       []*Cors
 }
+
+var useCors bool
 
 func New() *App {
 	return &App{
@@ -20,11 +24,50 @@ func New() *App {
 		ctx:        &context{},
 	}
 }
+func fn(a, b int) bool {
+	b = 1 << b
+	return a&b == b
+}
 
 func (app *App) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	app.ctx.req = req
 	app.ctx.resp = res
-	next, params := app.router.Lookup(req.Method, &req.URL.Path)
+	path := req.URL.Path
+	if useCors {
+		s := 0
+		e := len(app.cors)
+		for i := (s + e) / 2; i >= s && i < e; {
+			c := app.cors[i]
+			p := c.Path
+			if p > path {
+				e = i
+				i = (s + e) / 2
+			} else if p < path {
+				s = i
+				i = (s + e) / 2
+			} else {
+				headers := res.Header()
+				headers.Set("Access-Control-Allow-Origin", c.Origin)
+				if req.Method == http.MethodOptions {
+					if c.AllowMethods != "" {
+						headers.Set("Access-Control-Allow-Methods", c.AllowMethods)
+					} else {
+						headers.Set("Access-Control-Allow-Methods", "*")
+					}
+					if c.AllowHeaders != "" {
+						headers.Set("Access-Control-Allow-Headers", c.AllowHeaders)
+					} else {
+						headers.Set("Access-Control-Allow-Headers", "*")
+					}
+					res.WriteHeader(http.StatusNoContent)
+					fmt.Printf("%s\t%d\n", req.URL, 204)
+					return
+				}
+				break
+			}
+		}
+	}
+	next, params := app.router.Lookup(req.Method, &path)
 	app.ctx.params = params
 	for _, m := range app.middleware {
 		next = m(next)
@@ -34,12 +77,29 @@ func (app *App) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	} else {
 		app.ctx.Error(http.StatusNotFound, errors.New("page not found"))
 	}
+	fmt.Printf("%s\t%d\n", req.URL, app.ctx.code)
+}
+func (app *App) Cors(cfg *Cors) {
+	for _, a := range app.cors {
+		if a.Path == cfg.Path {
+			return
+		}
+	}
+	app.cors = append(app.cors, cfg)
 }
 func (app *App) Add(method, path string, h Handler) {
 	app.router.bind(getMethodCode(method), path, h)
 }
-
 func (app *App) Ready() {
+	if len(app.cors) > 0 {
+		useCors = true
+		sort.Slice(app.cors, func(i, j int) bool {
+			return sort.StringsAreSorted([]string{
+				app.cors[i].Path,
+				app.cors[j].Path,
+			})
+		})
+	}
 	app.router.ready()
 }
 func (app *App) Run(addr string, port int) {

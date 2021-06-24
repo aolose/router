@@ -174,7 +174,7 @@ func (r *router) bind(code int, path string, h Handler) {
 	}
 }
 
-func (r *router) Lookup(method string, path *string) (Handler, *[]*param) {
+func (r *router) Lookup(method string, path *string) (Handler, []*param) {
 	l := len(*path)
 	cd := getMethodCode(method)
 	if l > 1 && (*path)[l-1] == '/' {

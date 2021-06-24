@@ -9,7 +9,7 @@ type node struct {
 	deep    int
 	path    string
 	handler Handler
-	params  *[]*param
+	params  []*param
 }
 
 func (n *node) Add(path string) *node {
@@ -55,7 +55,7 @@ func (n *node) Add(path string) *node {
 	return nd
 }
 
-func lookupNs(ns *[][]*node, right *node, path *string, deep int) (Handler, *[]*param) {
+func lookupNs(ns *[][]*node, right *node, path *string, deep int) (Handler, []*param) {
 	st := mkA[deep]
 	en := mkB[deep]
 	l := en - st - 1

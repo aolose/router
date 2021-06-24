@@ -4,17 +4,18 @@ import "net/http"
 
 type Context interface {
 	Path() string
-	Status(int) *context
+	Status(int) context
 	Error(int, error)
 	Write(b []byte)
 	String(str string)
+	Header() http.Header
 	Params() map[string]string
 	Param(name string) string
 	Resp() http.ResponseWriter
 }
 
 type context struct {
-	params *[]*param
+	params []*param
 	req    *http.Request
 	resp   http.ResponseWriter
 	code   int
@@ -23,14 +24,17 @@ type context struct {
 func (c *context) Path() string {
 	return c.req.URL.Path
 }
+func (c *context) Header() http.Header {
+	return c.resp.Header()
+}
 func (c *context) Resp() http.ResponseWriter {
 	return c.resp
 }
 func (c *context) Param(name string) string {
 	if c.params != nil {
-		l := len(*c.params)
+		l := len(c.params)
 		for i := 0; i < l; i++ {
-			n := (*c.params)[i]
+			n := c.params[i]
 			p := c.Path()
 			parseReqPath(p)
 			if n.name == name {
@@ -45,9 +49,9 @@ func (c *context) Params() map[string]string {
 	m := make(map[string]string)
 	p := c.Path()
 	parseReqPath(p)
-	l := len(*c.params)
+	l := len(c.params)
 	for i := 0; i < l; i++ {
-		n := (*c.params)[i]
+		n := (c.params)[i]
 		m[n.name] = p[mkA[n.deep]:mkB[n.deep]]
 	}
 	return m
@@ -69,7 +73,8 @@ func (c *context) Write(b []byte) {
 	}
 }
 
-func (c *context) Status(s int) *context {
+func (c *context) Status(s int) context {
 	c.resp.WriteHeader(s)
-	return c
+	c.code = s
+	return *c
 }

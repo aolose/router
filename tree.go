@@ -65,8 +65,10 @@ Loop:
 			}
 		}
 	}
-	r.handler = h
-	r.params = &ps
+	if r != nil {
+		r.handler = h
+		r.params = ps
+	}
 }
 func (t *tree) ready() {
 	readNs(t.nodes, t.right)
